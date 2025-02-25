@@ -10,27 +10,22 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+private val KawaiiLightColorScheme = lightColorScheme(
+    primary = Colors.PastelPink,
+    secondary = Colors.PastelBlue,
+    tertiary = Colors.PastelPurple,
+    background = Colors.PastelYellow,
+    surface = Color.White
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val KawaiiDarkColorScheme = darkColorScheme(
+    primary = Colors.PastelPink.copy(alpha = 0.8f),
+    secondary = Colors.PastelBlue.copy(alpha = 0.8f),
+    tertiary = Colors.PastelPurple.copy(alpha = 0.8f),
+    background = Color.Black.copy(alpha = 0.9f),
+    surface = Color.Black.copy(alpha = 0.8f)
 )
 
 @Composable
@@ -43,16 +38,25 @@ fun TrendyTrackerTheme(
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) KawaiiDarkColorScheme else KawaiiLightColorScheme
         }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> KawaiiDarkColorScheme
+        else -> KawaiiLightColorScheme
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = Typography.copy(
+            headlineMedium = Typography.headlineMedium.copy(
+                fontFamily = KawaiiFont
+            ),
+            titleMedium = Typography.titleMedium.copy(
+                fontFamily = KawaiiFont
+            ),
+            bodyMedium = Typography.bodyMedium.copy(
+                fontFamily = KawaiiFont
+            )
+        ),
         content = content
     )
 }
