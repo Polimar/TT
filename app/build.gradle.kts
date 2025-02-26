@@ -82,4 +82,11 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
     implementation("androidx.compose.compiler:compiler:1.5.7")
+
+    implementation(platform("androidx.compose:compose-bom:2024.01.00"))
+    implementation("androidx.compose.foundation:foundation")
+}
+
+kapt {
+    correctErrorTypes = true
 }

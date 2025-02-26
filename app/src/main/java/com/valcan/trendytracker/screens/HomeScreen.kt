@@ -16,122 +16,136 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.valcan.trendytracker.R
 import com.valcan.trendytracker.ui.theme.Colors
-import com.valcan.trendytracker.ui.theme.Icons
-
-data class User(
-    val id: String,
-    val name: String,
-    val isMale: Boolean,
-    val clothesCount: Int = 0,
-    val shoesCount: Int = 0
-)
+import com.valcan.trendytracker.navigation.NavigationItem
+import com.valcan.trendytracker.viewmodels.UserViewModel
+import com.valcan.trendytracker.data.entities.UserEntity
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 
 @Composable
-fun HomeScreen(navController: NavController) {
-    var selectedUser by remember { mutableStateOf<User?>(null) }
-    var showUserSelection by remember { mutableStateOf(true) }
-    
-    // Lista di esempio degli utenti
-    val users = remember {
-        listOf(
-            User("1", "Marco", true),
-            User("2", "Anna", false),
-            User("3", "Luca", true),
-            User("4", "Sofia", false)
-        )
+fun HomeScreen(
+    navController: NavController,
+    viewModel: UserViewModel = hiltViewModel()
+) {
+    val selectedUser by viewModel.selectedUser.collectAsState()
+    val users by viewModel.users.collectAsState()
+    var showGenderDialog by remember { mutableStateOf(false) }
+    var showUserSelectionDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(users, selectedUser) {
+        when {
+            users.isEmpty() -> {
+                showGenderDialog = true
+            }
+            users.size == 1 && selectedUser == null -> {
+                viewModel.selectUser(users.first())
+            }
+            selectedUser == null && users.size > 1 -> {
+                showUserSelectionDialog = true
+            }
+        }
     }
 
-    if (showUserSelection && selectedUser == null) {
+    if (showGenderDialog) {
+        SelectGenderDialog(
+            onDismiss = { showGenderDialog = false },
+            onGenderSelected = { isMale ->
+                navController.navigate(
+                    route = if (isMale) NavigationItem.AddUserMale.route 
+                           else NavigationItem.AddUserFemale.route
+                )
+                showGenderDialog = false
+            }
+        )
+    }
+    
+    if (showUserSelectionDialog && users.size > 1) {
         UserSelectionDialog(
             users = users,
             onUserSelected = { user ->
-                selectedUser = user
-                showUserSelection = false
+                viewModel.selectUser(user)
+                showUserSelectionDialog = false
             }
         )
-    } else {
-        HomeContent(selectedUser!!)
+    }
+
+    selectedUser?.let { user ->
+        HomeContent(
+            user = user,
+            onVestitiClick = { navController.navigate(NavigationItem.Vestiti.route) },
+            onScarpeClick = { navController.navigate(NavigationItem.Scarpe.route) }
+        )
     }
 }
 
 @Composable
 fun UserSelectionDialog(
-    users: List<User>,
-    onUserSelected: (User) -> Unit
+    users: List<UserEntity>,
+    onUserSelected: (UserEntity) -> Unit
 ) {
-    Dialog(
-        onDismissRequest = { /* Non permettiamo di chiudere il dialog */ }
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surface
-        ) {
+    AlertDialog(
+        onDismissRequest = { },
+        title = { 
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Seleziona il tuo profilo",
+                    text = "Benvenuto in TrendyTracker",
                     style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    textAlign = TextAlign.Center
                 )
-
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(users) { user ->
-                        UserSelectionItem(user, onUserSelected)
+            }
+        },
+        text = {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(users) { user ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clickable { onUserSelected(user) }
+                            .padding(8.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(
+                                id = if (user.isMale) R.drawable.ic_male 
+                                else R.drawable.ic_female
+                            ),
+                            contentDescription = "User Avatar",
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(Colors.PastelBlue.copy(alpha = 0.7f))
+                                .padding(8.dp)
+                        )
+                        Text(
+                            text = user.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
             }
-        }
-    }
+        },
+        confirmButton = { }
+    )
 }
 
 @Composable
-fun UserSelectionItem(user: User, onUserSelected: (User) -> Unit) {
-    Column(
-        modifier = Modifier
-            .clickable { onUserSelected(user) }
-            .padding(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painter = painterResource(
-                id = if (user.isMale) R.drawable.usermale else R.drawable.userfemale
-            ),
-            contentDescription = "User Avatar",
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = user.name,
-            style = MaterialTheme.typography.titleMedium,
-            textAlign = TextAlign.Center
-        )
-        
-        Image(
-            painter = painterResource(id = R.drawable.ic_confirm),
-            contentDescription = "Confirm",
-            modifier = Modifier.size(24.dp)
-        )
-    }
-}
-
-@Composable
-fun HomeContent(user: User) {
+fun HomeContent(
+    user: UserEntity,
+    onVestitiClick: () -> Unit,
+    onScarpeClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -156,46 +170,42 @@ fun HomeContent(user: User) {
             modifier = Modifier
                 .size(160.dp)
                 .clip(CircleShape)
-                .background(Colors.PastelPink.copy(alpha = 0.7f)),
+                .background(Colors.PastelPink.copy(alpha = 0.7f))
+                .clickable(onClick = onVestitiClick),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
-                    painter = painterResource(id = Icons.CLOTHES),
-                    contentDescription = "Vestiti",
+                    painter = painterResource(id = R.drawable.ic_add),
+                    contentDescription = "Aggiungi",
                     modifier = Modifier.size(64.dp)
                 )
-                Text(
-                    text = "${user.clothesCount}",
-                    style = MaterialTheme.typography.headlineMedium
-                )
+                Text("Vestiti")
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Cerchio scarpe
         Box(
             modifier = Modifier
                 .size(160.dp)
                 .clip(CircleShape)
-                .background(Colors.PastelBlue.copy(alpha = 0.7f)),
+                .background(Colors.PastelBlue.copy(alpha = 0.7f))
+                .clickable(onClick = onScarpeClick),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
-                    painter = painterResource(id = Icons.SHOES),
-                    contentDescription = "Scarpe",
+                    painter = painterResource(id = R.drawable.ic_add),
+                    contentDescription = "Aggiungi",
                     modifier = Modifier.size(64.dp)
                 )
-                Text(
-                    text = "${user.shoesCount}",
-                    style = MaterialTheme.typography.headlineMedium
-                )
+                Text("Scarpe")
             }
         }
     }

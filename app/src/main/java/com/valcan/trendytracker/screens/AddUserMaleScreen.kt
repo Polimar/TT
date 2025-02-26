@@ -6,13 +6,31 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import java.util.*
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.valcan.trendytracker.viewmodels.AggiungiUtenteViewModel
+import com.valcan.trendytracker.navigation.NavigationItem
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddUserMaleScreen(navController: NavController) {
+fun AddUserMaleScreen(
+    navController: NavController,
+    viewModel: AggiungiUtenteViewModel = hiltViewModel()
+) {
     var nome by remember { mutableStateOf("") }
     var dataNascita by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(viewModel.saveResult) {
+        viewModel.saveResult.collect { success ->
+            if (success) {
+                navController.navigate(NavigationItem.Home.route) {
+                    popUpTo(NavigationItem.Home.route)
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -45,10 +63,15 @@ fun AddUserMaleScreen(navController: NavController) {
 
         Button(
             onClick = {
-                // Salva utente e torna indietro
-                navController.popBackStack()
+                scope.launch {
+                    viewModel.saveUser(
+                        name = nome,
+                        isMale = true
+                    )
+                }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = nome.isNotBlank()
         ) {
             Text("Salva")
         }
