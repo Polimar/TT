@@ -5,23 +5,23 @@ import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.valcan.trendytracker.viewmodels.AggiungiArmadioViewModel
+import com.valcan.trendytracker.viewmodels.AggiungiUtenteViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.material3.ExperimentalMaterial3Api
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AggiungiArmadioScreen(
+fun AggiungiUtenteScreen(
     navController: NavController,
-    viewModel: AggiungiArmadioViewModel = hiltViewModel()
+    isMale: Boolean,
+    viewModel: AggiungiUtenteViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewModel.saveResult) {
@@ -35,7 +35,7 @@ fun AggiungiArmadioScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Aggiungi Armadio") },
+                title = { Text(if (isMale) "Aggiungi Utente Maschile" else "Aggiungi Utente Femminile") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.Default.ArrowBack, "Indietro")
@@ -49,44 +49,29 @@ fun AggiungiArmadioScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nome Armadio") },
+                label = { Text("Nome") },
                 modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Posizione") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Descrizione (opzionale)") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3
             )
 
             Button(
                 onClick = {
                     scope.launch {
-                        viewModel.saveWardrobe(
+                        viewModel.saveUser(
                             name = name,
-                            location = location,
-                            description = description.takeIf { it.isNotBlank() }
+                            isMale = isMale
                         )
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = name.isNotBlank() && location.isNotBlank()
+                enabled = name.isNotBlank()
             ) {
-                Text("Salva Armadio")
+                Text("Salva Utente")
             }
         }
     }
